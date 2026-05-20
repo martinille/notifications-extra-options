@@ -96,6 +96,7 @@ class NotificationFixer {
 
         tray._onNotify = function(source, notification) {
             self._prepareNotification(notification);
+            self._scheduleDelete(notification);
             return self._originals.trayOnNotify.call(this, source, notification);
         };
 
@@ -328,4 +329,3 @@ class NotificationFixer {
         this._originals = {};
     }
 }
-
