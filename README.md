@@ -1,5 +1,7 @@
 # Cinnamon Notifications Fixer
 
+Version: `1.0.0`
+
 Small Cinnamon extension for Linux Mint / Cinnamon that enforces predictable notification behavior:
 
 - shows notification popups for a fixed maximum time
@@ -26,13 +28,33 @@ Open the extension's Cinnamon settings window directly:
 
 ## Install
 
-Run:
+### From GitHub release
+
+Download `cinnamon-notifications-fixer@martinille-v1.0.0.zip` from the latest release and extract it into:
+
+```text
+~/.local/share/cinnamon/extensions/
+```
+
+Then enable `Cinnamon Notifications Fixer` in Cinnamon Extensions.
+
+### From source
+
+Clone the repository and run:
 
 ```bash
 ./scripts/install.sh
 ```
 
 Then enable `Cinnamon Notifications Fixer` in Cinnamon Extensions.
+
+### Settings
+
+Open the settings window from Cinnamon Extensions, or run:
+
+```bash
+./scripts/open-settings.sh
+```
 
 ## Disable or revert
 
@@ -52,4 +74,12 @@ Run:
 
 ```bash
 ./scripts/test.sh
+```
+
+## Release packaging
+
+Create a release ZIP:
+
+```bash
+./scripts/package.sh
 ```

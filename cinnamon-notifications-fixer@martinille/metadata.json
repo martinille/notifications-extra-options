@@ -2,7 +2,7 @@
     "uuid": "cinnamon-notifications-fixer@martinille",
     "name": "Cinnamon Notifications Fixer",
     "description": "Enforces notification timeout, auto-delete, and popup position.",
+    "version": "1.0.0",
     "cinnamon-version": ["6.6"],
     "url": "https://github.com/martinille/cinnamon-notifications-fixer"
 }
-

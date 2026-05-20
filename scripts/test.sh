@@ -10,6 +10,7 @@ jq empty "$EXT/settings-schema.json"
 node --check "$EXT/extension.js"
 
 test "$(jq -r '.uuid' "$EXT/metadata.json")" = "$UUID"
+test "$(jq -r '.version' "$EXT/metadata.json")" = "1.0.0"
 test -f "$EXT/extension.js"
 test -f "$EXT/settings-schema.json"
 test "$(jq -r '.position.options["Top center"]' "$EXT/settings-schema.json")" = "top-center"
