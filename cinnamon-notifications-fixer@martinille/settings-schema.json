@@ -1,0 +1,52 @@
+{
+    "layout": {
+        "type": "layout",
+        "pages": ["general"],
+        "general": {
+            "type": "page",
+            "title": "General",
+            "sections": ["behavior", "placement"]
+        },
+        "behavior": {
+            "type": "section",
+            "title": "Behavior",
+            "keys": ["timeout-seconds", "delete-after-timeout", "normalize-critical"]
+        },
+        "placement": {
+            "type": "section",
+            "title": "Placement",
+            "keys": ["position"]
+        }
+    },
+    "timeout-seconds": {
+        "type": "spinbutton",
+        "default": 10,
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "units": "seconds",
+        "description": "Notification timeout"
+    },
+    "delete-after-timeout": {
+        "type": "switch",
+        "default": true,
+        "description": "Delete notifications after timeout"
+    },
+    "normalize-critical": {
+        "type": "switch",
+        "default": true,
+        "description": "Normalize critical notifications"
+    },
+    "position": {
+        "type": "combobox",
+        "default": "top-right",
+        "description": "Popup position",
+        "options": {
+            "Top right": "top-right",
+            "Top left": "top-left",
+            "Bottom right": "bottom-right",
+            "Bottom left": "bottom-left"
+        }
+    }
+}
+
