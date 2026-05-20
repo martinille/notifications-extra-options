@@ -43,10 +43,11 @@
         "description": "Popup position",
         "options": {
             "Top right": "top-right",
+            "Top center": "top-center",
             "Top left": "top-left",
             "Bottom right": "bottom-right",
+            "Bottom center": "bottom-center",
             "Bottom left": "bottom-left"
         }
     }
 }
-

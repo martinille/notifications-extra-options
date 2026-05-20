@@ -4,7 +4,7 @@ Small Cinnamon extension for Linux Mint / Cinnamon that enforces predictable not
 
 - shows notification popups for a fixed maximum time
 - removes notifications after they close, including notification-center entries
-- lets you choose the popup corner
+- lets you choose the popup position
 - restores Cinnamon's original behavior when the extension is disabled
 
 Tested against Cinnamon 6.6.7 on Linux Mint 22.3.
@@ -16,7 +16,13 @@ The extension exposes these settings in Cinnamon's extension settings UI:
 - `Timeout`: number of seconds before notifications close
 - `Delete after timeout`: remove notifications from the notification center after closing
 - `Normalize critical urgency`: prevents critical notifications from bypassing normal close behavior
-- `Position`: top-right, top-left, bottom-right, or bottom-left
+- `Position`: top-right, top-center, top-left, bottom-right, bottom-center, or bottom-left
+
+Open the extension's Cinnamon settings window directly:
+
+```bash
+./scripts/open-settings.sh
+```
 
 ## Install
 
@@ -47,4 +53,3 @@ Run:
 ```bash
 ./scripts/test.sh
 ```
-

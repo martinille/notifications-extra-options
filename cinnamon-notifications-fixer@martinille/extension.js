@@ -262,11 +262,16 @@ class NotificationFixer {
         const width = bin.width || table.width;
         const height = bin.height || table.height;
         const isLeft = pos.indexOf("left") !== -1;
+        const isCenter = pos.indexOf("center") !== -1;
         const isBottom = pos.indexOf("bottom") !== -1;
 
-        bin.x = isLeft
-            ? monitor.x + margin + leftGap
-            : monitor.x + monitor.width - width - margin - rightGap;
+        if (isCenter) {
+            bin.x = monitor.x + Math.floor((monitor.width - width + leftGap - rightGap) / 2);
+        } else if (isLeft) {
+            bin.x = monitor.x + margin + leftGap;
+        } else {
+            bin.x = monitor.x + monitor.width - width - margin - rightGap;
+        }
 
         bin.y = isBottom
             ? monitor.y + monitor.height - height - bottomGap
