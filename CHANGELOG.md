@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 - 2026-05-21
+
+- Fix hide animation direction for custom positions.
+- Top positions now slide upward when closing.
+- Bottom positions now slide downward when closing.
+
 ## v1.0.0 - 2026-05-20
 
 - Enforce fixed notification timeout.
@@ -7,4 +13,3 @@
 - Normalize resident and critical notifications.
 - Support top-right, top-center, top-left, bottom-right, bottom-center, and bottom-left popup positions.
 - Provide Cinnamon settings UI through `settings-schema.json`.
-

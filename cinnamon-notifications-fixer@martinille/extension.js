@@ -1,3 +1,4 @@
+const Clutter = imports.gi.Clutter;
 const GLib = imports.gi.GLib;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
@@ -6,6 +7,8 @@ const Settings = imports.ui.settings;
 
 const UUID = "cinnamon-notifications-fixer@martinille";
 const URGENCY_NORMAL = 1;
+const STATE_HIDING = 3;
+const ANIMATION_TIME = 200;
 
 let fixer = null;
 
@@ -115,8 +118,7 @@ class NotificationFixer {
         };
 
         tray._hideNotification = function() {
-            self._disconnectPositionSignal(this);
-            self._originals.trayHideNotification.call(this);
+            self._hideNotification(this);
         };
 
         tray._hideNotificationCompleted = function() {
@@ -276,6 +278,34 @@ class NotificationFixer {
         bin.y = isBottom
             ? monitor.y + monitor.height - height - bottomGap
             : monitor.y + topGap;
+    }
+
+    _hideNotification(tray) {
+        this._disconnectPositionSignal(tray);
+
+        if (tray.bottomPositionSignal) {
+            tray._notificationBin.disconnect(tray.bottomPositionSignal);
+            tray.bottomPositionSignal = 0;
+        }
+
+        const monitor = tray._monitor || Main.layoutManager.primaryMonitor;
+        const pos = this.position || "top-right";
+        const isBottom = pos.indexOf("bottom") !== -1;
+        const y = isBottom
+            ? monitor.y + monitor.height
+            : monitor.y - tray._notificationBin.height;
+
+        tray._notificationState = STATE_HIDING;
+        tray._notificationBin.ease({
+            y: y,
+            opacity: 0,
+            duration: ANIMATION_TIME,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+            onComplete: () => {
+                tray._hideNotificationCompleted();
+                tray._updateState();
+            }
+        });
     }
 
     _notificationMargin(table) {

@@ -1,6 +1,6 @@
 # Cinnamon Notifications Fixer
 
-Version: `1.0.0`
+Version: `1.0.1`
 
 Small Cinnamon extension for Linux Mint / Cinnamon that enforces predictable notification behavior:
 
@@ -30,7 +30,7 @@ Open the extension's Cinnamon settings window directly:
 
 ### From GitHub release
 
-Download `cinnamon-notifications-fixer@martinille-v1.0.0.zip` from the latest release and extract it into:
+Download `cinnamon-notifications-fixer@martinille-v1.0.1.zip` from the latest release and extract it into:
 
 ```text
 ~/.local/share/cinnamon/extensions/
