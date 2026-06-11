@@ -5,7 +5,7 @@ const Mainloop = imports.mainloop;
 const MessageTray = imports.ui.messageTray;
 const Settings = imports.ui.settings;
 
-const UUID = "cinnamon-notifications-fixer@martinille";
+const UUID = "notifications-extra-options@martinille";
 const URGENCY_NORMAL = 1;
 const STATE_HIDING = 3;
 const ANIMATION_TIME = 200;
@@ -30,6 +30,8 @@ class NotificationFixer {
         this.timeoutSeconds = 10;
         this.deleteAfterTimeout = true;
         this.normalizeCritical = true;
+        this.highlightApps = "";
+        this.highlightEffect = "red-flash";
         this.position = "top-right";
 
         this._enabled = false;
@@ -37,10 +39,13 @@ class NotificationFixer {
         this._settings.bind("timeout-seconds", "timeoutSeconds", this._onSettingsChanged);
         this._settings.bind("delete-after-timeout", "deleteAfterTimeout", this._onSettingsChanged);
         this._settings.bind("normalize-critical", "normalizeCritical", this._onSettingsChanged);
+        this._settings.bind("highlight-apps", "highlightApps", this._onSettingsChanged);
+        this._settings.bind("highlight-effect", "highlightEffect", this._onSettingsChanged);
         this._settings.bind("position", "position", this._onSettingsChanged);
 
         this._originals = {};
         this._timers = [];
+        this._effectTimers = [];
     }
 
     enable() {
@@ -60,6 +65,7 @@ class NotificationFixer {
 
         this._restore();
         this._clearAllTimers();
+        this._clearAllEffectTimers();
         this._enabled = false;
     }
 
@@ -98,7 +104,7 @@ class NotificationFixer {
         const self = this;
 
         tray._onNotify = function(source, notification) {
-            self._prepareNotification(notification);
+            self._prepareNotification(source, notification);
             self._scheduleDelete(notification);
             return self._originals.trayOnNotify.call(this, source, notification);
         };
@@ -156,7 +162,7 @@ class NotificationFixer {
         return next;
     }
 
-    _prepareNotification(notification) {
+    _prepareNotification(source, notification) {
         if (!notification) {
             return;
         }
@@ -166,6 +172,162 @@ class NotificationFixer {
         if (this.normalizeCritical && notification.urgency === MessageTray.Urgency.CRITICAL) {
             notification.setUrgency(MessageTray.Urgency.NORMAL);
         }
+
+        this._applyHighlight(source, notification);
+    }
+
+    _applyHighlight(source, notification) {
+        if (!notification || !notification._table) {
+            return;
+        }
+
+        this._clearHighlight(notification);
+
+        if (!this._shouldHighlight(source, notification)) {
+            return;
+        }
+
+        notification._table.add_style_class_name("neo-highlight");
+        const effect = this._highlightEffect();
+
+        notification._table.add_style_class_name("neo-highlight-" + effect);
+
+        if (effect === "red-flash") {
+            this._startFlash(notification);
+        }
+    }
+
+    _clearHighlight(notification) {
+        const table = notification && notification._table;
+
+        if (!table) {
+            return;
+        }
+
+        table.remove_style_class_name("neo-highlight");
+        table.remove_style_class_name("neo-highlight-red-flash");
+        table.remove_style_class_name("neo-highlight-on");
+        table.remove_style_class_name("neo-highlight-toxic");
+        table.remove_style_class_name("neo-highlight-siren");
+        table.remove_style_class_name("neo-highlight-hazard");
+
+        this._clearEffectTimer(notification);
+    }
+
+    _shouldHighlight(source, notification) {
+        const apps = this._highlightApps();
+
+        if (!apps.length) {
+            return false;
+        }
+
+        const names = this._notificationNames(source, notification);
+
+        for (let i = 0; i < apps.length; i++) {
+            for (let j = 0; j < names.length; j++) {
+                if (names[j].indexOf(apps[i]) !== -1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    _highlightApps() {
+        return String(this.highlightApps || "")
+            .toLowerCase()
+            .split(",")
+            .map((app) => app.trim())
+            .filter((app) => app.length > 0);
+    }
+
+    _notificationNames(source, notification) {
+        const names = [];
+        this._pushName(names, source && source.title);
+        this._pushName(names, source && source.initialTitle);
+        this._pushName(names, source && source.desktopEntryHint);
+        this._pushName(names, notification && notification.title);
+
+        if (source && source.app) {
+            try {
+                this._pushName(names, source.app.get_name());
+            } catch (e) {
+            }
+
+            try {
+                this._pushName(names, source.app.get_id());
+            } catch (e) {
+            }
+        }
+
+        return names;
+    }
+
+    _pushName(names, name) {
+        if (name) {
+            names.push(String(name).toLowerCase());
+        }
+    }
+
+    _highlightEffect() {
+        const effect = String(this.highlightEffect || "red-flash");
+
+        if (["red-flash", "toxic", "siren", "hazard"].indexOf(effect) !== -1) {
+            return effect;
+        }
+
+        return "red-flash";
+    }
+
+    _startFlash(notification) {
+        const table = notification && notification._table;
+
+        if (!table) {
+            return;
+        }
+
+        this._clearEffectTimer(notification);
+        notification._cnfFlashOn = false;
+        notification._cnfEffectTimerId = Mainloop.timeout_add(260, () => {
+            const actor = notification && notification._table;
+
+            if (!actor || notification._destroyed) {
+                notification._cnfEffectTimerId = 0;
+                return false;
+            }
+
+            notification._cnfFlashOn = !notification._cnfFlashOn;
+
+            if (notification._cnfFlashOn) {
+                actor.add_style_class_name("neo-highlight-on");
+            } else {
+                actor.remove_style_class_name("neo-highlight-on");
+            }
+
+            return true;
+        });
+
+        this._effectTimers.push(notification);
+    }
+
+    _clearEffectTimer(notification) {
+        if (notification && notification._cnfEffectTimerId) {
+            Mainloop.source_remove(notification._cnfEffectTimerId);
+            notification._cnfEffectTimerId = 0;
+        }
+
+        if (notification) {
+            notification._cnfFlashOn = false;
+        }
+    }
+
+    _clearAllEffectTimers() {
+        for (let i = 0; i < this._effectTimers.length; i++) {
+            this._clearEffectTimer(this._effectTimers[i]);
+        }
+
+        this._effectTimers = [];
     }
 
     _scheduleDelete(notification) {
@@ -326,6 +488,10 @@ class NotificationFixer {
     _repositionCurrent() {
         if (this._enabled && Main.messageTray) {
             this._applyPosition(Main.messageTray);
+
+            if (Main.messageTray._notification) {
+                this._applyHighlight(Main.messageTray._notification.source, Main.messageTray._notification);
+            }
         }
     }
 

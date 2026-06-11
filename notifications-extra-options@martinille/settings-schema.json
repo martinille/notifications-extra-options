@@ -5,12 +5,17 @@
         "general": {
             "type": "page",
             "title": "General",
-            "sections": ["behavior", "placement"]
+            "sections": ["behavior", "highlight", "placement"]
         },
         "behavior": {
             "type": "section",
             "title": "Behavior",
             "keys": ["timeout-seconds", "delete-after-timeout", "normalize-critical"]
+        },
+        "highlight": {
+            "type": "section",
+            "title": "Highlighted notifications",
+            "keys": ["highlight-apps", "highlight-effect"]
         },
         "placement": {
             "type": "section",
@@ -36,6 +41,23 @@
         "type": "switch",
         "default": true,
         "description": "Normalize critical notifications"
+    },
+    "highlight-apps": {
+        "type": "entry",
+        "default": "",
+        "description": "Applications to highlight",
+        "tooltip": "Comma-separated lowercase names, for example: slack, phpstorm"
+    },
+    "highlight-effect": {
+        "type": "combobox",
+        "default": "red-flash",
+        "description": "Highlight effect",
+        "options": {
+            "Red flash": "red-flash",
+            "Toxic": "toxic",
+            "Siren": "siren",
+            "Hazard": "hazard"
+        }
     },
     "position": {
         "type": "combobox",

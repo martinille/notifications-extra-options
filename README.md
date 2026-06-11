@@ -1,11 +1,12 @@
-# Cinnamon Notifications Fixer
+# Notifications Extra Options
 
 Version: `1.0.1`
 
-Small Cinnamon extension for Linux Mint / Cinnamon that enforces predictable notification behavior:
+Small Cinnamon extension for Linux Mint / Cinnamon that adds extra notification options:
 
 - shows notification popups for a fixed maximum time
 - removes notifications after they close, including notification-center entries
+- highlights notifications from selected applications
 - lets you choose the popup position
 - restores Cinnamon's original behavior when the extension is disabled
 
@@ -18,6 +19,8 @@ The extension exposes these settings in Cinnamon's extension settings UI:
 - `Timeout`: number of seconds before notifications close
 - `Delete after timeout`: remove notifications from the notification center after closing
 - `Normalize critical urgency`: prevents critical notifications from bypassing normal close behavior
+- `Applications to highlight`: comma-separated lowercase app names, for example `slack, phpstorm`
+- `Highlight effect`: red flash, toxic, siren, or hazard
 - `Position`: top-right, top-center, top-left, bottom-right, bottom-center, or bottom-left
 
 Open the extension's Cinnamon settings window directly:
@@ -30,13 +33,13 @@ Open the extension's Cinnamon settings window directly:
 
 ### From GitHub release
 
-Download `cinnamon-notifications-fixer@martinille-v1.0.1.zip` from the latest release and extract it into:
+Download `notifications-extra-options@martinille-v1.0.1.zip` from the latest release and extract it into:
 
 ```text
 ~/.local/share/cinnamon/extensions/
 ```
 
-Then enable `Cinnamon Notifications Fixer` in Cinnamon Extensions.
+Then enable `Notifications Extra Options` in Cinnamon Extensions.
 
 ### From source
 
@@ -46,7 +49,7 @@ Clone the repository and run:
 ./scripts/install.sh
 ```
 
-Then enable `Cinnamon Notifications Fixer` in Cinnamon Extensions.
+Then enable `Notifications Extra Options` in Cinnamon Extensions.
 
 ### Settings
 
@@ -63,7 +66,7 @@ Disable the extension in Cinnamon Extensions. The extension restores all patched
 To remove the installed files:
 
 ```bash
-rm -rf ~/.local/share/cinnamon/extensions/cinnamon-notifications-fixer@martinille
+rm -rf ~/.local/share/cinnamon/extensions/notifications-extra-options@martinille
 ```
 
 Restart Cinnamon if the extension UI does not refresh immediately.

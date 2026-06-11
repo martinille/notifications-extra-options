@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-UUID="cinnamon-notifications-fixer@martinille"
+UUID="notifications-extra-options@martinille"
 EXT="$ROOT/$UUID"
 
 jq empty "$EXT/metadata.json"
@@ -15,5 +15,7 @@ test -f "$EXT/extension.js"
 test -f "$EXT/settings-schema.json"
 test "$(jq -r '.position.options["Top center"]' "$EXT/settings-schema.json")" = "top-center"
 test "$(jq -r '.position.options["Bottom center"]' "$EXT/settings-schema.json")" = "bottom-center"
+test "$(jq -r '."highlight-apps".type' "$EXT/settings-schema.json")" = "entry"
+test "$(jq -r '."highlight-effect".options["Red flash"]' "$EXT/settings-schema.json")" = "red-flash"
 
 echo "ok"

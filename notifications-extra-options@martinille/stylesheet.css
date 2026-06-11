@@ -1,0 +1,35 @@
+/* Cinnamon loads this file when the extension is enabled. */
+
+.neo-highlight {
+    border-radius: 8px;
+}
+
+.neo-highlight-red-flash {
+    border: 4px solid #ff0000;
+    background-color: #240000;
+    box-shadow: 0 0 26px rgba(255, 0, 0, 0.95);
+}
+
+.neo-highlight-red-flash.neo-highlight-on {
+    background-color: #ff0000;
+    color: #ffffff;
+    box-shadow: 0 0 34px rgba(255, 0, 0, 1);
+}
+
+.neo-highlight-toxic {
+    border: 4px solid #39ff14;
+    background-color: #120018;
+    box-shadow: 0 0 22px rgba(57, 255, 20, 0.9), inset 0 0 18px rgba(255, 0, 255, 0.55);
+}
+
+.neo-highlight-siren {
+    border: 4px solid #004cff;
+    background-color: #210006;
+    box-shadow: -10px 0 22px rgba(255, 0, 0, 0.95), 10px 0 22px rgba(0, 76, 255, 0.95);
+}
+
+.neo-highlight-hazard {
+    border: 4px solid #ffea00;
+    background-color: #1b1500;
+    box-shadow: 0 0 0 4px #111111, 0 0 24px rgba(255, 234, 0, 0.9);
+}

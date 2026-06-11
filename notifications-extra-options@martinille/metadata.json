@@ -1,0 +1,8 @@
+{
+    "uuid": "notifications-extra-options@martinille",
+    "name": "Notifications Extra Options",
+    "description": "Cinnamon notifications extra options.",
+    "version": "1.0.1",
+    "cinnamon-version": ["6.6"],
+    "url": "https://github.com/martinille/notifications-extra-options"
+}

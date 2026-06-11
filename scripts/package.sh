@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-UUID="cinnamon-notifications-fixer@martinille"
+UUID="notifications-extra-options@martinille"
 VERSION="$(jq -r '.version' "$ROOT/$UUID/metadata.json")"
 DIST="$ROOT/dist"
 ZIP="$DIST/$UUID-v$VERSION.zip"
@@ -16,4 +16,3 @@ rm -f "$ZIP"
 )
 
 echo "$ZIP"
-

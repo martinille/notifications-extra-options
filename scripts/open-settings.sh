@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-xlet-settings extension cinnamon-notifications-fixer@martinille
-
+xlet-settings extension notifications-extra-options@martinille
