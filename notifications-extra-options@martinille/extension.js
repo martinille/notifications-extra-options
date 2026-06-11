@@ -4,6 +4,7 @@ const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
 const MessageTray = imports.ui.messageTray;
 const Settings = imports.ui.settings;
+const St = imports.gi.St;
 
 const UUID = "notifications-extra-options@martinille";
 const URGENCY_NORMAL = 1;
@@ -46,6 +47,7 @@ class NotificationFixer {
         this._originals = {};
         this._timers = [];
         this._effectTimers = [];
+        this._popups = [];
     }
 
     enable() {
@@ -66,6 +68,7 @@ class NotificationFixer {
         this._restore();
         this._clearAllTimers();
         this._clearAllEffectTimers();
+        this._clearPopups();
         this._enabled = false;
     }
 
@@ -105,8 +108,7 @@ class NotificationFixer {
 
         tray._onNotify = function(source, notification) {
             self._prepareNotification(source, notification);
-            self._scheduleDelete(notification);
-            return self._originals.trayOnNotify.call(this, source, notification);
+            self._showPopup(this, source, notification);
         };
 
         tray._showNotification = function() {
@@ -177,7 +179,9 @@ class NotificationFixer {
     }
 
     _applyHighlight(source, notification) {
-        if (!notification || !notification._table) {
+        const actors = this._styleActors(notification);
+
+        if (!actors.length) {
             return;
         }
 
@@ -187,10 +191,12 @@ class NotificationFixer {
             return;
         }
 
-        notification._table.add_style_class_name("neo-highlight");
         const effect = this._highlightEffect();
 
-        notification._table.add_style_class_name("neo-highlight-" + effect);
+        for (let i = 0; i < actors.length; i++) {
+            actors[i].add_style_class_name("neo-highlight");
+            actors[i].add_style_class_name("neo-highlight-" + effect);
+        }
 
         if (effect === "red-flash") {
             this._startFlash(notification);
@@ -198,20 +204,36 @@ class NotificationFixer {
     }
 
     _clearHighlight(notification) {
-        const table = notification && notification._table;
+        const actors = this._styleActors(notification);
 
-        if (!table) {
+        if (!actors.length) {
             return;
         }
 
-        table.remove_style_class_name("neo-highlight");
-        table.remove_style_class_name("neo-highlight-red-flash");
-        table.remove_style_class_name("neo-highlight-on");
-        table.remove_style_class_name("neo-highlight-toxic");
-        table.remove_style_class_name("neo-highlight-siren");
-        table.remove_style_class_name("neo-highlight-hazard");
+        for (let i = 0; i < actors.length; i++) {
+            actors[i].remove_style_class_name("neo-highlight");
+            actors[i].remove_style_class_name("neo-highlight-red-flash");
+            actors[i].remove_style_class_name("neo-highlight-on");
+            actors[i].remove_style_class_name("neo-highlight-toxic");
+            actors[i].remove_style_class_name("neo-highlight-siren");
+            actors[i].remove_style_class_name("neo-highlight-hazard");
+        }
 
         this._clearEffectTimer(notification);
+    }
+
+    _styleActors(notification) {
+        const actors = [];
+
+        if (notification && notification.actor) {
+            actors.push(notification.actor);
+        }
+
+        if (notification && notification._table) {
+            actors.push(notification._table);
+        }
+
+        return actors;
     }
 
     _shouldHighlight(source, notification) {
@@ -281,28 +303,30 @@ class NotificationFixer {
     }
 
     _startFlash(notification) {
-        const table = notification && notification._table;
+        const actors = this._styleActors(notification);
 
-        if (!table) {
+        if (!actors.length) {
             return;
         }
 
         this._clearEffectTimer(notification);
         notification._cnfFlashOn = false;
-        notification._cnfEffectTimerId = Mainloop.timeout_add(260, () => {
-            const actor = notification && notification._table;
+        notification._cnfEffectTimerId = Mainloop.timeout_add(180, () => {
+            const actors = this._styleActors(notification);
 
-            if (!actor || notification._destroyed) {
+            if (!actors.length || notification._destroyed) {
                 notification._cnfEffectTimerId = 0;
                 return false;
             }
 
             notification._cnfFlashOn = !notification._cnfFlashOn;
 
-            if (notification._cnfFlashOn) {
-                actor.add_style_class_name("neo-highlight-on");
-            } else {
-                actor.remove_style_class_name("neo-highlight-on");
+            for (let i = 0; i < actors.length; i++) {
+                if (notification._cnfFlashOn) {
+                    actors[i].add_style_class_name("neo-highlight-on");
+                } else {
+                    actors[i].remove_style_class_name("neo-highlight-on");
+                }
             }
 
             return true;
@@ -328,6 +352,105 @@ class NotificationFixer {
         }
 
         this._effectTimers = [];
+    }
+
+    _showPopup(tray, source, notification) {
+        if (!notification || !notification.actor) {
+            return;
+        }
+
+        if (notification._cnfPopup) {
+            this._applyHighlight(source, notification);
+            this._scheduleDelete(notification);
+            this._positionPopups();
+            return;
+        }
+
+        if (notification.actor._parent_container) {
+            notification.actor._parent_container.remove_actor(notification.actor);
+        }
+
+        const bin = new St.Bin();
+        const monitor = this._notificationMonitor(tray);
+        const fullscreen = tray.settings && tray.settings.get_boolean("fullscreen-notifications");
+
+        bin.child = notification.actor;
+        bin.opacity = 0;
+        notification._cnfPopup = {
+            bin: bin,
+            monitor: monitor,
+            notification: notification,
+            positionSignal: 0,
+            signal: 0
+        };
+
+        notification._cnfPopup.signal = notification.connect("destroy", () => {
+            this._removePopup(notification);
+        });
+        notification._cnfPopup.positionSignal = bin.connect("queue-redraw", () => {
+            this._positionPopups();
+            return false;
+        });
+
+        this._popups.push(notification);
+        Main.layoutManager.addChrome(bin);
+        Main.layoutManager._chrome.modifyActorParams(bin, {
+            visibleInFullscreen: notification.urgency === MessageTray.Urgency.CRITICAL || fullscreen
+        });
+
+        if (!notification.silent || notification.urgency >= MessageTray.Urgency.HIGH) {
+            Main.soundManager.play("notification");
+        }
+
+        bin.show();
+        this._positionPopups();
+        bin.ease({
+            opacity: 255,
+            duration: ANIMATION_TIME,
+            mode: Clutter.AnimationMode.EASE_OUT_QUAD
+        });
+        this._scheduleDelete(notification);
+    }
+
+    _removePopup(notification) {
+        const popup = notification && notification._cnfPopup;
+
+        if (!popup) {
+            return;
+        }
+
+        const index = this._popups.indexOf(notification);
+
+        if (index !== -1) {
+            this._popups.splice(index, 1);
+        }
+
+        this._clearTimer(notification);
+        this._clearHighlight(notification);
+
+        if (popup.positionSignal) {
+            popup.bin.disconnect(popup.positionSignal);
+        }
+
+        popup.bin.child = null;
+        Main.layoutManager.removeChrome(popup.bin);
+        popup.bin.destroy();
+        notification._cnfPopup = null;
+        this._positionPopups();
+    }
+
+    _clearPopups() {
+        const popups = this._popups.slice();
+
+        for (let i = 0; i < popups.length; i++) {
+            if (!popups[i]._destroyed) {
+                popups[i].destroy(MessageTray.NotificationDestroyedReason.DISMISSED);
+            }
+
+            this._removePopup(popups[i]);
+        }
+
+        this._popups = [];
     }
 
     _scheduleDelete(notification) {
@@ -367,6 +490,111 @@ class NotificationFixer {
 
     _timeoutMs() {
         return Math.max(1, this.timeoutSeconds) * 1000;
+    }
+
+    _notificationMonitor(tray) {
+        let monitor = Main.layoutManager.primaryMonitor;
+
+        if (!tray || !tray.settings) {
+            return monitor;
+        }
+
+        const display = tray.settings.get_string("notification-screen-display");
+
+        if (display === "active-screen") {
+            return Main.layoutManager.currentMonitor;
+        }
+
+        if (display === "fixed-screen") {
+            const number = tray.settings.get_int("notification-fixed-screen");
+            const monitors = Main.layoutManager.monitors;
+
+            if (number > 0 && number <= monitors.length) {
+                monitor = monitors[number - 1];
+            }
+        }
+
+        return monitor;
+    }
+
+    _positionPopups() {
+        const pos = this.position || "top-right";
+        const isBottom = pos.indexOf("bottom") !== -1;
+        const gap = 10;
+        const offsets = {};
+
+        for (let i = 0; i < this._popups.length; i++) {
+            const notification = this._popups[i];
+            const popup = notification && notification._cnfPopup;
+
+            if (!popup || !popup.bin || !notification.actor) {
+                continue;
+            }
+
+            const monitor = popup.monitor || Main.layoutManager.primaryMonitor;
+            const key = String(monitor.index);
+            const base = this._basePosition(monitor, popup.bin, notification.actor);
+
+            if (!offsets[key]) {
+                offsets[key] = 0;
+            }
+
+            popup.bin.x = base.x;
+            popup.bin.y = isBottom
+                ? base.y - offsets[key]
+                : base.y + offsets[key];
+
+            offsets[key] += popup.bin.height + gap;
+        }
+    }
+
+    _basePosition(monitor, bin, actor) {
+        const pos = this.position || "top-right";
+        const topPanel = Main.panelManager.getPanel(monitor.index, 0);
+        const bottomPanel = Main.panelManager.getPanel(monitor.index, 1);
+        const leftPanel = Main.panelManager.getPanel(monitor.index, 2);
+        const rightPanel = Main.panelManager.getPanel(monitor.index, 3);
+        const margin = this._notificationMargin(actor);
+        let topGap = 10;
+        let bottomGap = 10;
+        let leftGap = 0;
+        let rightGap = 0;
+
+        if (topPanel) {
+            topGap += topPanel.actor.get_height();
+        }
+
+        if (bottomPanel) {
+            bottomGap += bottomPanel.actor.get_height();
+        }
+
+        if (leftPanel) {
+            leftGap += leftPanel.actor.get_width();
+        }
+
+        if (rightPanel) {
+            rightGap += rightPanel.actor.get_width();
+        }
+
+        const width = bin.width || actor.width;
+        const height = bin.height || actor.height;
+        const isLeft = pos.indexOf("left") !== -1;
+        const isCenter = pos.indexOf("center") !== -1;
+        const isBottom = pos.indexOf("bottom") !== -1;
+        let x = monitor.x + monitor.width - width - margin - rightGap;
+
+        if (isCenter) {
+            x = monitor.x + Math.floor((monitor.width - width + leftGap - rightGap) / 2);
+        } else if (isLeft) {
+            x = monitor.x + margin + leftGap;
+        }
+
+        return {
+            x: x,
+            y: isBottom
+                ? monitor.y + monitor.height - height - bottomGap
+                : monitor.y + topGap
+        };
     }
 
     _applyPosition(tray) {
